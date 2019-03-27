@@ -1,0 +1,6 @@
+<div class="page" >
+    <%= for chord <- @chords do %>
+        <p><%= chord.root %></p>
+        <%= render(GVLWeb.PageView, "chord.html", chord) %>
+    <%= end %>
+</div>

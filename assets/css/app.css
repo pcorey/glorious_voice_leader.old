@@ -1,3 +1,9 @@
-/* This file is for your main application css. */
+body {
+    font-size: 12px;
+    font-family: 'Fira Code';
+}
 
-@import "./phoenix.css";
+.margin {
+    width: 800px;
+    margin: 2em auto;
+}

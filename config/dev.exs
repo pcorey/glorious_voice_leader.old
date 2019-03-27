@@ -52,7 +52,8 @@ config :glorious_voice_leader, GVLWeb.Endpoint,
       ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
       ~r{priv/gettext/.*(po)$},
       ~r{lib/glorious_voice_leader_web/views/.*(ex)$},
-      ~r{lib/glorious_voice_leader_web/templates/.*(eex)$}
+      ~r{lib/glorious_voice_leader_web/templates/.*(eex)$},
+      ~r{lib/server/live/.*(ex)$}
     ]
   ]
 

@@ -9,9 +9,10 @@ defmodule GVL.Application do
     # List all child processes to be supervised
     children = [
       # Start the endpoint when the application starts
-      GVLWeb.Endpoint
+      GVLWeb.Endpoint,
       # Starts a worker by calling: GVL.Worker.start_link(arg)
       # {GVL.Worker, arg},
+      Chord.Table
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
