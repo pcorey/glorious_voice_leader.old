@@ -3,6 +3,17 @@ defmodule GVLWeb.Endpoint do
 
   socket("/live", Phoenix.LiveView.Socket)
 
+  # socket(
+  #   "/live",
+  #   GVLWeb.LiveViewSocket,
+  #   websocket: [
+  #     serializer: [{TermSerializer, "~> 2.0.0"}]
+  #   ],
+  #   longpoll: [
+  #     serializer: [{TermSerializer, "~> 2.0.0"}]
+  #   ]
+  # )
+
   socket("/socket", GVLWeb.UserSocket, websocket: true, longpoll: false)
 
   # Serve at "/" the static files from "priv/static" directory.

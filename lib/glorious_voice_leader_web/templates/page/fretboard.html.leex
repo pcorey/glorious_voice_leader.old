@@ -1,0 +1,20 @@
+<div class="chord">
+  <%= f = form_for %Plug.Conn{}, "#", [phx_change: :validate] %>
+    <%= hidden_input f, :index, value: @index %>
+    <%= select f, :root_name, root_options(), value: @root_name %>
+    <%= select f, :quality_name, quality_options(), value: @quality_name %>
+  </form>
+
+  <div class="fretboard">
+    <%= for {frets, string} <- Enum.with_index(@heatmap) |> Enum.reverse() do %>
+      <div class="string">
+        <%= for {freq, fret} <- Enum.with_index(frets) do %><!--
+          --><div class='fret <%= fret_classes(string, fret, @playing, freq) %>'
+                  style='color: <%= fret_color(string, fret, freq) %>; background-color: <%= fret_background_color(string, fret, freq) %>'
+                  phx-click="click_fret" phx-value=<%= {@index, string, fret, if Enum.at(@playing, string) == fret do nil else fret end} |> :erlang.term_to_binary() |> Base.encode64() %>
+                  ></div><!--
+        --><%= end %>
+      </div>
+    <%= end %>
+  </div>
+</div>

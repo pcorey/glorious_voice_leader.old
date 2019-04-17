@@ -70,8 +70,32 @@ defmodule Fretboard do
     end
   end
 
-  def new(strings, frets) do
-    false
+  def from_chord(chord) do
+    chord
+    |> Enum.with_index()
+    |> Enum.reduce(Fretboard.new(6, 18, 0), fn
+      {nil, _string}, fretboard ->
+        fretboard
+
+      {fret, string}, fretboard ->
+        fretboard
+        |> List.replace_at(
+          string,
+          fretboard
+          |> Enum.at(string)
+          |> List.replace_at(
+            fret,
+            fretboard
+            |> Enum.at(string)
+            |> Enum.at(fret)
+            |> Kernel.+(1)
+          )
+        )
+    end)
+  end
+
+  def new(strings, frets, default \\ false) do
+    default
     |> List.duplicate(frets)
     |> List.duplicate(strings)
   end

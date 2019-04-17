@@ -1,9 +1,135 @@
 body {
-    font-size: 12px;
-    font-family: 'Fira Code';
+    background-color: white;
+    font-size: 22px;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    line-height: 1.31;
+    margin: 0;
+    padding: 0;
 }
 
-.margin {
-    width: 800px;
-    margin: 2em auto;
+.page {
+    width: min-content;
+    margin: 0 auto;
+    padding: 1em;
+}
+
+select {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    border: transparent;
+    background-color: transparent;
+    font-size: 1em;
+    border-radius: 0;
+}
+
+p {
+    font-family: sans-serif;
+    margin: 2em 0;
+    line-height: 1.6;
+}
+
+a {
+    color: rgb(90.58659255197627, 164.58426499968934, 325.98552304261);
+}
+
+a:visited {
+    color: rgb(90.58659255197627, 164.58426499968934, 325.98552304261);
+}
+
+.fretboard {
+    text-align: center;
+    color: #222;
+    margin-bottom: 1em;
+}
+
+.string {
+    white-space: nowrap;
+}
+
+.fret {
+    display: inline-block;
+}
+
+.fret.played:before {
+    content: "─●─"
+}
+
+.fret.unplayed:before {
+    content: "───"
+}
+
+.fret.top.unplayed:after {
+    content: "┬"
+}
+
+.fret.top.first:before {
+    content: "┌"
+}
+
+.fret.top.last:after {
+    content: "┐"
+}
+
+.fret.bottom.unplayed:after {
+    content: "┴"
+}
+
+.fret.bottom.first:before {
+    content: "└"
+}
+
+.fret.bottom.last:after {
+    content: "┘"
+}
+
+.fret.first:before {
+    content: "├"
+}
+
+.fret.last:after {
+    content: "┤"
+}
+
+.fret:after {
+    content: "┼"
+}
+
+.fret.played:after {
+    content: "┼"
+}
+
+.fret.top.played:after {
+    content: "┬"
+}
+
+.fret.bottom.played:after {
+    content: "┴"
+}
+
+.fret.played.first:before {
+    content: "●"
+}
+
+.fret.playable {
+    cursor: pointer;
+}
+
+.fret.first:after,
+.fret.first.top:after,
+.fret.first.bottom:after {
+    content: "";
+}
+
+button {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    border: 2px solid #e1f6fe;
+    background-color: #fbfeff;
+    font-size: 1em;
+    border-radius: 0;
+}
+
+.add-new-chord {
+    display: block;
+    width: 100%;
+    margin: 2em 0;
+    padding: 0.5em 0;
 }

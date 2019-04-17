@@ -167,11 +167,13 @@ defmodule Chords do
       voicings(root, quality, gaps, strings, @frets)
       |> Enum.map(
         &%Chord{
-          root: root,
-          quality: quality,
+          chord: &1,
+          fretboard: Fretboard.from_chord(&1),
           gaps: gaps,
+          quality: quality,
+          root: root,
           strings: strings,
-          chord: &1
+          tuning: @tuning
         }
       )
     end
