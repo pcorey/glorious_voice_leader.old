@@ -70,7 +70,9 @@ config :logger, level: :info
 # separately.
 # import_config "prod.secret.exs"
 
-config :hello, GVLWeb.Endpoint,
-  url: [scheme: "https", host: "glorious-voice-leader", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json",
-  secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE")
+config :glorious_voice_leader, GVLWeb.Endpoint,
+  # Possibly not needed, but doesn't hurt
+  http: [port: {:system, "PORT"}],
+  url: [host: System.get_env("APP_NAME") <> ".gigalixirapp.com", port: 80],
+  secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
+  server: true
