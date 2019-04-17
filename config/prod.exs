@@ -73,6 +73,6 @@ config :logger, level: :info
 config :glorious_voice_leader, GVLWeb.Endpoint,
   # Possibly not needed, but doesn't hurt
   http: [port: {:system, "PORT"}],
-  url: [host: "gloriousvoiceleader.com", port: 80],
+  url: [host: "www.gloriousvoiceleader.com", port: 80],
   secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
   server: true
