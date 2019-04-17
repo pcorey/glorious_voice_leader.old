@@ -27,21 +27,72 @@ defmodule GVLWeb.PageLive do
     GVLWeb.PageView.render("index.html", assigns)
   end
 
-  def mount(_session, socket) do
+  def mount(token, socket) do
+    chords = initial_chords(token)
+
     {:ok,
      assign(
        socket,
-       chords: [
-         %{
-           heatmap: Chord.Heatmap.generate(0, [4, 3, 4, 1], [nil, nil, nil, nil, nil, nil]),
-           playing: [nil, nil, nil, nil, nil, nil],
-           quality: [4, 3, 4, 1],
-           quality_name: "maj7",
-           root: 0,
-           root_name: "C"
-         }
-       ]
+       token: update_token(chords),
+       chords: chords
      )}
+  end
+
+  defp initial_chords(nil) do
+    [
+      %{
+        heatmap: Chord.Heatmap.generate(0, [4, 3, 4, 1], [nil, nil, nil, nil, nil, nil]),
+        playing: [nil, nil, nil, nil, nil, nil],
+        quality: [4, 3, 4, 1],
+        quality_name: "maj7",
+        root: 0,
+        root_name: "C"
+      }
+    ]
+  end
+
+  defp initial_chords(chords) do
+    chords =
+      chords
+      |> Base.decode64!()
+      |> :erlang.binary_to_term()
+
+    chords
+    |> Enum.with_index()
+    |> Enum.map(fn {chord, index} ->
+      previous =
+        if index == 0 do
+          [nil, nil, nil, nil, nil, nil]
+        else
+          Enum.at(chords, index - 1).playing
+        end
+
+      chord
+      |> Map.put_new(
+        :root_name,
+        @root_options
+        |> Map.to_list()
+        |> Enum.find(fn
+          {_, root} -> root == chord.root
+          _ -> false
+        end)
+        |> elem(0)
+      )
+      |> Map.put_new(
+        :quality_name,
+        @quality_options
+        |> Map.to_list()
+        |> Enum.find(fn
+          {_, quality} -> quality == chord.quality
+          _ -> false
+        end)
+        |> elem(0)
+      )
+      |> Map.put_new(
+        :heatmap,
+        Chord.Heatmap.generate(chord.root, chord.quality, chord.playing, previous)
+      )
+    end)
   end
 
   def handle_event("validate", input, socket) do
@@ -53,7 +104,7 @@ defmodule GVLWeb.PageLive do
 
     previous =
       if index == 0 do
-        []
+        [nil, nil, nil, nil, nil, nil]
       else
         Enum.at(socket.assigns.chords, index - 1).playing
       end
@@ -93,7 +144,10 @@ defmodule GVLWeb.PageLive do
         )
       end
 
-    {:noreply, assign(socket, :chords, chords)}
+    {:noreply,
+     socket
+     |> assign(:chords, chords)
+     |> assign(:token, update_token(chords))}
   end
 
   def handle_event("click_fret", input, socket) do
@@ -141,7 +195,10 @@ defmodule GVLWeb.PageLive do
         )
       end
 
-    {:noreply, assign(socket, :chords, chords)}
+    {:noreply,
+     socket
+     |> assign(:chords, chords)
+     |> assign(:token, update_token(chords))}
   end
 
   def handle_event("add_new_chord", input, socket) do
@@ -159,6 +216,22 @@ defmodule GVLWeb.PageLive do
           }
         ]
 
-    {:noreply, assign(socket, :chords, chords)}
+    {:noreply,
+     socket
+     |> assign(:chords, chords)
+     |> assign(:token, update_token(chords))}
+  end
+
+  defp update_token(chords) do
+    chords
+    |> Enum.map(
+      &%{
+        playing: &1.playing,
+        quality: &1.quality,
+        root: &1.root
+      }
+    )
+    |> :erlang.term_to_binary()
+    |> Base.encode64()
   end
 end

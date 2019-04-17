@@ -1,7 +1,11 @@
 defmodule GVLWeb.PageController do
   use GVLWeb, :controller
 
-  def index(conn, _) do
-    Phoenix.LiveView.Controller.live_render(conn, GVLWeb.PageLive, session: %{})
+  def index(conn, params) do
+    Phoenix.LiveView.Controller.live_render(
+      conn,
+      GVLWeb.PageLive,
+      session: Map.get(params, "chords")
+    )
   end
 end
