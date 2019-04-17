@@ -68,4 +68,9 @@ config :logger, level: :info
 
 # Finally import the config/prod.secret.exs which should be versioned
 # separately.
-import_config "prod.secret.exs"
+# import_config "prod.secret.exs"
+
+config :hello, GVLWeb.Endpoint,
+  url: [scheme: "https", host: "glorious-voice-leader", port: 80],
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE")
