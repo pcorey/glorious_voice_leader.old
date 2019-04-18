@@ -7,6 +7,12 @@ body {
     padding: 0;
 }
 
+@media (max-width: 1000px) {
+    body {
+        font-size: 12px;
+    }
+}
+
 h1 {
     font-family: sans-serif;
 }
