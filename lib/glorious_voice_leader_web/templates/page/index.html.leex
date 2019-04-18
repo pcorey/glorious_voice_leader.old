@@ -1,5 +1,8 @@
 <div class="page" >
   <div class="header">
+    <%= if is_binary(@title) do %>
+      <h1><%= @title %></h1>
+    <%= end %>
     <p><strong>Glorious Voice Leader</strong> suggests guitar chord voicings for a given chord type based on the voicing that came before it. Glorious Voice Leader tries to optimize for voice leading between chords, while also balancing playability.</p>
   </div>
   <%= for {chord, index} <- Enum.with_index(@chords) do %>

@@ -5,7 +5,7 @@ defmodule GVLWeb.PageController do
     Phoenix.LiveView.Controller.live_render(
       conn,
       GVLWeb.PageLive,
-      session: Map.get(params, "chords")
+      session: params
     )
   end
 end

@@ -7,6 +7,10 @@ body {
     padding: 0;
 }
 
+h1 {
+    font-family: sans-serif;
+}
+
 .page {
     width: min-content;
     margin: 0 auto;

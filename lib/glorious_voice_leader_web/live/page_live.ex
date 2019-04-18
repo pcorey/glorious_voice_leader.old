@@ -27,12 +27,13 @@ defmodule GVLWeb.PageLive do
     GVLWeb.PageView.render("index.html", assigns)
   end
 
-  def mount(token, socket) do
-    chords = initial_chords(token)
+  def mount(params, socket) do
+    chords = initial_chords(Map.get(params, "chords"))
 
     {:ok,
      assign(
        socket,
+       title: Map.get(params, "title"),
        token: update_token(chords),
        chords: chords
      )}
