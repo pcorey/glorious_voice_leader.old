@@ -6,7 +6,9 @@
       <%= select f, :quality_name, quality_options(), value: @quality_name %>
     </div>
     <button phx-click="clear_fretboard" phx-value="<%= @index %>">clear</button>
-    <button phx-click="remove_fretboard" phx-value="<%= @index %>">remove</button>
+    <%= if @index != 0 do %>
+      <button phx-click="remove_fretboard" phx-value="<%= @index %>">remove</button>
+    <%= end %>
   </form>
 
   <div class="fretboard">
