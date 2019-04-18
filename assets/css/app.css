@@ -13,6 +13,19 @@ body {
     padding: 1em;
 }
 
+.chord form {
+    margin: 0 0 0.5em 0;
+    display: flex;
+}
+
+.chord button:first-of-type {
+    margin-right: 0.5em;
+}
+
+.chord .selects {
+    flex: 1;
+}
+
 select {
     font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     border: transparent;

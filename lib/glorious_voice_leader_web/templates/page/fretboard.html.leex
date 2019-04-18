@@ -1,8 +1,12 @@
 <div class="chord">
   <%= f = form_for %Plug.Conn{}, "#", [phx_change: :validate] %>
-    <%= hidden_input f, :index, value: @index %>
-    <%= select f, :root_name, root_options(), value: @root_name %>
-    <%= select f, :quality_name, quality_options(), value: @quality_name %>
+    <div class="selects">
+      <%= hidden_input f, :index, value: @index %>
+      <%= select f, :root_name, root_options(), value: @root_name %>
+      <%= select f, :quality_name, quality_options(), value: @quality_name %>
+    </div>
+    <button phx-click="clear_fretboard" phx-value="<%= @index %>">clear</button>
+    <button phx-click="remove_fretboard" phx-value="<%= @index %>">remove</button>
   </form>
 
   <div class="fretboard">
