@@ -89,4 +89,15 @@ defmodule GVLWeb.PageView do
       "7"
     ]
   end
+
+  def midi(playing) do
+    playing
+    |> Enum.zip([40, 45, 50, 55, 59, 64])
+    |> Enum.reject(fn
+      {nil, _} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {fret, open} -> fret + open end)
+    |> IO.inspect()
+  end
 end

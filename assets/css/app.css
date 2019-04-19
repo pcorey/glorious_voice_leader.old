@@ -28,8 +28,12 @@ h1 {
     display: flex;
 }
 
-.chord button:first-of-type {
-    margin-right: 0.5em;
+.chord .buttons {
+    display: flex;
+}
+
+.chord .buttons button {
+    margin: 0 0 0 0.5em;
 }
 
 .chord .selects {
@@ -156,3 +160,4 @@ button {
     margin: 2em 0;
     padding: 0.5em 0;
 }
+

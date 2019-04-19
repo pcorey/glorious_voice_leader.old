@@ -1,21 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-      <!-- Global site tag (gtag.js) - Google Analytics -->
-      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-54297550-17"></script>
-      <script>
-       window.dataLayer = window.dataLayer || [];
-       function gtag(){dataLayer.push(arguments);}
-       gtag('js', new Date());
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-54297550-17"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-       gtag('config', 'UA-54297550-17');
-      </script>
+    gtag('config', 'UA-54297550-17');
+    </script>
 
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Glorious Voice Leader</title>
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.9/Tone.min.js" ></script>
+    <script>
+     var synth = new Tone.PolySynth(4, Tone.Synth).toMaster();
+     synth.set({
+         
+         oscillator: {
+             type: "sine"
+         },
+         envelope: {
+             attack: 0.01,
+             decay: 0.75,
+             sustain: 0.75,
+             release: 0.75
+         }
+     });
+    </script>
   </head>
   <body>
     <div class="margin">
