@@ -1,5 +1,39 @@
-defmodule GVLWeb.PageView do
-  use GVLWeb, :view
+defmodule GVLWeb.StringLive do
+  use Phoenix.LiveView
+
+  def render(assigns) do
+    ~L"""
+    <div class="string">
+      <%= for {freq, fret} <- Enum.with_index(@frets) do %>
+        <%= live_render(@socket, GVLWeb.FretLive, session: %{
+          index: @index,
+          pid: @pid,
+          chord: @chord,
+          frets: @frets,
+          string: @string,
+          fret: fret,
+          freq: freq
+        }, child_id: fret) %>
+      <%= end %>
+    </div>
+    """
+  end
+
+  def mount(params, socket) do
+    {:ok,
+     assign(
+       socket,
+       pid: params.pid,
+       chord: params.chord,
+       index: params.index,
+       frets: params.frets,
+       string: params.string
+     )}
+  end
+
+  def handle_event("click", _, socket) do
+    {:noreply, socket}
+  end
 
   def fret_classes(string, fret, playing, freq) do
     [

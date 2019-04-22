@@ -63,12 +63,15 @@ a:visited {
 }
 
 .fretboard {
+    display: flex;
+    flex-direction: column;
     text-align: center;
     color: #222;
     margin-bottom: 1em;
 }
 
 .string {
+    display: flex;
     white-space: nowrap;
 }
 

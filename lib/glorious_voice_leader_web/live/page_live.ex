@@ -1,30 +1,43 @@
 defmodule GVLWeb.PageLive do
   use Phoenix.LiveView
 
-  @root_options %{
-    "C" => 0,
-    "C#/Db" => 1,
-    "D" => 2,
-    "D#/Eb" => 3,
-    "E" => 4,
-    "F" => 5,
-    "F#/Gb" => 6,
-    "G" => 7,
-    "G#/Ab" => 8,
-    "A" => 9,
-    "A#/Bb" => 10,
-    "B" => 11
-  }
-
-  @quality_options %{
-    "maj7" => [4, 3, 4, 1],
-    "m7" => [3, 4, 3, 2],
-    "m7b5" => [3, 3, 4, 2],
-    "7" => [4, 3, 3, 2]
-  }
-
   def render(assigns) do
-    GVLWeb.PageView.render("index.html", assigns)
+    IO.puts("rerendering page")
+
+    ~L"""
+    <div class="page" >
+
+      <div class="header">
+
+        <%= if is_binary(@title) do %>
+          <h1><%= @title %></h1>
+        <%= end %>
+
+        <p><strong>Glorious Voice Leader</strong> suggests guitar chord voicings for a given chord type based on the voicing that came before it. Glorious Voice Leader tries to optimize for voice leading between chords, while also balancing playability.</p>
+
+      </div>
+
+      <%= for {chord, index} <- Enum.with_index(@chords) do %>
+        <%= live_render(@socket, GVLWeb.ChordLive, session: %{
+          pid: @pid,
+          chord: chord,
+          index: index,
+          chords: @chords,
+          root_name: chord.root_name,
+          quality_name: chord.quality_name
+        }, child_id: index) %>
+      <%= end %>
+
+      <%= live_render(@socket, GVLWeb.AddChordLive, session: %{
+        chords: @chords,
+        pid: @pid
+      }, child_id: @chords |> inspect) %>
+
+      <p>Glorious Voice Leader is heavily inspired by <a href="https://amzn.to/2Ince4p">the works of the amazing guitarist and educator, Ted Greene</a>. All hail, Glorious Voice Leader!</p>
+      <p>Use <a href="/?chords=<%= @token %>">this link</a> to share your chord progression.</p>
+
+    </div>
+    """
   end
 
   def mount(params, socket) do
@@ -35,7 +48,8 @@ defmodule GVLWeb.PageLive do
        socket,
        title: Map.get(params, "title"),
        token: update_token(chords),
-       chords: chords
+       chords: chords,
+       pid: self()
      )}
   end
 
@@ -71,156 +85,17 @@ defmodule GVLWeb.PageLive do
       chord
       |> Map.put_new(
         :root_name,
-        @root_options
-        |> Map.to_list()
-        |> Enum.find(fn
-          {_, root} -> root == chord.root
-          _ -> false
-        end)
-        |> elem(0)
+        Chord.Root.name(chord.root)
       )
       |> Map.put_new(
         :quality_name,
-        @quality_options
-        |> Map.to_list()
-        |> Enum.find(fn
-          {_, quality} -> quality == chord.quality
-          _ -> false
-        end)
-        |> elem(0)
+        Chord.Quality.name(chord.quality)
       )
       |> Map.put_new(
         :heatmap,
         Chord.Heatmap.generate(chord.root, chord.quality, chord.playing, previous)
       )
     end)
-  end
-
-  def handle_event("validate", input, socket) do
-    {index, _} = Integer.parse(input["index"])
-    root_name = input["root_name"]
-    root = Map.get(@root_options, root_name)
-    quality_name = input["quality_name"]
-    quality = Map.get(@quality_options, quality_name)
-
-    previous =
-      if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
-      else
-        Enum.at(socket.assigns.chords, index - 1).playing
-      end
-
-    chords =
-      socket.assigns.chords
-      |> List.update_at(
-        index,
-        &%{
-          heatmap: Chord.Heatmap.generate(root, quality, &1.playing, previous),
-          playing: &1.playing,
-          quality: quality,
-          quality_name: quality_name,
-          root: root,
-          root_name: root_name
-        }
-      )
-
-    chords =
-      if index == length(chords) - 1 do
-        chords
-      else
-        chords
-        |> List.update_at(
-          index + 1,
-          &%{
-            &1
-            | heatmap:
-                Chord.Heatmap.generate(
-                  &1.root,
-                  &1.quality,
-                  &1.playing,
-                  Enum.at(chords, index).playing
-                )
-              # Chord.Heatmap.generate(@root, @quality, @playing, Map.get(Enum.at(@chords, @index - 1), :playing, [nil, nil, nil, nil, nil, nil]) |> IO.inspect
-          }
-        )
-      end
-
-    {:noreply,
-     socket
-     |> assign(:chords, chords)
-     |> assign(:token, update_token(chords))}
-  end
-
-  def handle_event("click_fret", input, socket) do
-    {index, string, fret, value} =
-      input
-      |> Base.decode64!()
-      |> :erlang.binary_to_term()
-
-    previous =
-      if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
-      else
-        Enum.at(socket.assigns.chords, index - 1).playing
-      end
-
-    chords =
-      socket.assigns.chords
-      |> List.update_at(index, fn chord ->
-        playing = List.replace_at(chord.playing, string, value)
-
-        %{
-          chord
-          | playing: playing,
-            heatmap: Chord.Heatmap.generate(chord.root, chord.quality, playing, previous)
-        }
-      end)
-
-    chords =
-      if index == length(chords) - 1 do
-        chords
-      else
-        chords
-        |> List.update_at(
-          index + 1,
-          &%{
-            &1
-            | heatmap:
-                Chord.Heatmap.generate(
-                  &1.root,
-                  &1.quality,
-                  &1.playing,
-                  Enum.at(chords, index).playing
-                )
-          }
-        )
-      end
-
-    {:noreply,
-     socket
-     |> assign(:chords, chords)
-     |> assign(:token, update_token(chords))}
-  end
-
-  def handle_event("add_new_chord", input, socket) do
-    chords =
-      socket.assigns.chords ++
-        [
-          %{
-            heatmap:
-              Chord.Heatmap.generate(0, [4, 3, 4, 1], List.last(socket.assigns.chords).playing),
-            playing: [nil, nil, nil, nil, nil, nil],
-            quality: [4, 3, 4, 1],
-            quality_name: "maj7",
-            root: 0,
-            root_name: "C"
-          }
-        ]
-
-    {:noreply,
-     socket
-     |> assign(:chords, chords)
-     |> assign(:token, update_token(chords))}
   end
 
   defp update_token(chords) do
@@ -236,87 +111,8 @@ defmodule GVLWeb.PageLive do
     |> Base.encode64()
   end
 
-  def handle_event("clear_fretboard", input, socket) do
-    {index, _} = Integer.parse(input)
-
-    previous =
-      if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
-      else
-        Enum.at(socket.assigns.chords, index - 1).playing
-      end
-
-    chords =
-      socket.assigns.chords
-      |> List.update_at(index, fn chord ->
-        playing = [nil, nil, nil, nil, nil, nil]
-
-        %{
-          chord
-          | playing: playing,
-            heatmap: Chord.Heatmap.generate(chord.root, chord.quality, playing, previous)
-        }
-      end)
-
-    chords =
-      if index == length(chords) - 1 do
-        chords
-      else
-        chords
-        |> List.update_at(
-          index + 1,
-          &%{
-            &1
-            | heatmap:
-                Chord.Heatmap.generate(
-                  &1.root,
-                  &1.quality,
-                  &1.playing,
-                  Enum.at(chords, index).playing
-                )
-          }
-        )
-      end
-
-    {:noreply,
-     socket
-     |> assign(:chords, chords)
-     |> assign(:token, update_token(chords))}
-  end
-
-  def handle_event("remove_fretboard", input, socket) do
-    {index, _} = Integer.parse(input)
-
-    previous =
-      if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
-      else
-        Enum.at(socket.assigns.chords, index - 1).playing
-      end
-
-    chords =
-      socket.assigns.chords
-      |> List.delete_at(index)
-
-    chords =
-      if index == length(chords) do
-        chords
-      else
-        chords
-        |> List.update_at(
-          index,
-          &%{
-            &1
-            | heatmap:
-                Chord.Heatmap.generate(
-                  &1.root,
-                  &1.quality,
-                  &1.playing,
-                  Enum.at(chords, index - 1).playing
-                )
-          }
-        )
-      end
+  def handle_info({:update_chords, chords}, socket) do
+    IO.puts("handling info")
 
     {:noreply,
      socket
