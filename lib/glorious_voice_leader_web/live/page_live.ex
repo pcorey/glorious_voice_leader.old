@@ -1,40 +1,99 @@
 defmodule GVLWeb.PageLive do
   use Phoenix.LiveView
+  use Phoenix.HTML
 
-  @root_options %{
-    "C" => 0,
-    "C#/Db" => 1,
-    "D" => 2,
-    "D#/Eb" => 3,
-    "E" => 4,
-    "F" => 5,
-    "F#/Gb" => 6,
-    "G" => 7,
-    "G#/Ab" => 8,
-    "A" => 9,
-    "A#/Bb" => 10,
-    "B" => 11
-  }
-
-  @quality_options %{
-    "maj7" => [4, 3, 4, 1],
-    "m7" => [3, 4, 3, 2],
-    "m7b5" => [3, 3, 4, 2],
-    "7" => [4, 3, 3, 2]
-  }
+  def render(assigns = %{loading: true}) do
+    ~L"""
+    <div class="loading">
+    <p>Generating chords...</p>
+    </div>
+    """
+  end
 
   def render(assigns) do
-    GVLWeb.PageView.render("index.html", assigns)
+    ~L"""
+    <div class="page" >
+    <div class="header">
+    <%= if is_binary(@title) do %>
+    <h1><%= @title %></h1>
+    <%= end %>
+    <p><strong>Glorious Voice Leader</strong> suggests guitar chord voicings for a given chord type based on the voicing that came before it. Glorious Voice Leader tries to optimize for voice leading between chords, while also balancing playability.</p>
+    </div>
+    <%= for {chord, index} <- Enum.with_index(@chords) do %>
+    <div class="chord">
+    <%= f = form_for %Plug.Conn{}, "#", [phx_change: :validate] %>
+    <div class="selects">
+      <%= hidden_input f, :index, value: index %>
+      <%= select f, :root_name, Chord.Root.names(), value: chord.root_name %>
+      <%= select f, :quality_name, Chord.Quality.names() |> Enum.sort(), value: chord.quality_name %>
+    </div>
+    <div class="buttons">
+      <button phx-click="clear_fretboard" phx-value="<%= index %>">clear</button>
+      <%= if index != 0 do %>
+        <button phx-click="remove_fretboard" phx-value="<%= index %>">remove</button>
+      <%= end %>
+      <button onclick="play(<%= index %>, <%= inspect(midi(chord.playing), char_lists: :as_lists) %>)" type="button">play</button>
+      <script>
+        function play(index, playing) {
+          console.log(index, playing);
+          let notes = playing.map(midi => new Tone.Frequency(midi, "midi"))
+          synth.triggerAttackRelease(notes, 0.25, undefined, 0.25);
+        }
+      </script>
+    </div>
+    </form>
+
+    <div class="fretboard">
+    <%= for {frets, string} <- Enum.with_index(chord.heatmap) |> Enum.reverse() do %>
+      <div class="string">
+      <%= for {freq, fret} <- Enum.with_index(frets) do %>
+      <div class='fret <%= fret_classes(string, fret, chord.playing, freq) %>'
+      style='color: <%= fret_color(string, fret, freq) %>; background-color: <%= fret_background_color(string, fret, freq) %>'
+      phx-click="click_fret" phx-value=<%= {index, string, fret, if Enum.at(chord.playing, string) == fret do nil else fret end} |> :erlang.term_to_binary() |> Base.encode64() %>
+      ></div>
+      <%= end %>
+      </div>
+    <%= end %>
+    <div class="string marker">
+    <div class="marker">&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;3&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;5&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;7&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;9&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;12&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    <div class="marker">&nbsp;15&nbsp;&nbsp;</div>
+    </div>
+    </div>
+    </div>
+    <%= end %>
+    <button class="add-new-chord" phx-click="add_new_chord">+ Add New Chord</button>
+
+    <p>Glorious Voice Leader is heavily inspired by <a href="https://amzn.to/2Ince4p">the works of the amazing guitarist and educator, Ted Greene</a>. All hail, Glorious Voice Leader!</p>
+    <p>Use <a href="/?chords=<%= @token %>">this link</a> to share your chord progression.</p>
+    </div>
+    """
   end
 
   def mount(params, socket) do
     chords = initial_chords(Map.get(params, "chords"))
+
+    GenServer.cast(Chord.Table, {:generate, self()})
 
     {:ok,
      assign(
        socket,
        title: Map.get(params, "title"),
        token: update_token(chords),
+       loading: true,
        chords: chords
      )}
   end
@@ -45,7 +104,7 @@ defmodule GVLWeb.PageLive do
         heatmap: Chord.Heatmap.generate(0, [4, 3, 4, 1], [nil, nil, nil, nil, nil, nil]),
         playing: [nil, nil, nil, nil, nil, nil],
         quality: [4, 3, 4, 1],
-        quality_name: "maj7",
+        quality_name: "∆7",
         root: 0,
         root_name: "C"
       }
@@ -71,7 +130,7 @@ defmodule GVLWeb.PageLive do
       chord
       |> Map.put_new(
         :root_name,
-        @root_options
+        Chord.Root.options()
         |> Map.to_list()
         |> Enum.find(fn
           {_, root} -> root == chord.root
@@ -81,7 +140,7 @@ defmodule GVLWeb.PageLive do
       )
       |> Map.put_new(
         :quality_name,
-        @quality_options
+        Chord.Quality.options()
         |> Map.to_list()
         |> Enum.find(fn
           {_, quality} -> quality == chord.quality
@@ -99,9 +158,9 @@ defmodule GVLWeb.PageLive do
   def handle_event("validate", input, socket) do
     {index, _} = Integer.parse(input["index"])
     root_name = input["root_name"]
-    root = Map.get(@root_options, root_name)
+    root = Chord.Root.value(root_name)
     quality_name = input["quality_name"]
-    quality = Map.get(@quality_options, quality_name)
+    quality = Chord.Quality.value(quality_name)
 
     previous =
       if index == 0 do
@@ -140,7 +199,6 @@ defmodule GVLWeb.PageLive do
                   &1.playing,
                   Enum.at(chords, index).playing
                 )
-              # Chord.Heatmap.generate(@root, @quality, @playing, Map.get(Enum.at(@chords, @index - 1), :playing, [nil, nil, nil, nil, nil, nil]) |> IO.inspect
           }
         )
       end
@@ -211,7 +269,7 @@ defmodule GVLWeb.PageLive do
               Chord.Heatmap.generate(0, [4, 3, 4, 1], List.last(socket.assigns.chords).playing),
             playing: [nil, nil, nil, nil, nil, nil],
             quality: [4, 3, 4, 1],
-            quality_name: "maj7",
+            quality_name: "∆7",
             root: 0,
             root_name: "C"
           }
@@ -322,5 +380,86 @@ defmodule GVLWeb.PageLive do
      socket
      |> assign(:chords, chords)
      |> assign(:token, update_token(chords))}
+  end
+
+  def fret_classes(string, fret, playing, freq) do
+    [
+      if Enum.at(playing, string) == fret do
+        "played"
+      else
+        "unplayed"
+      end,
+      if fret == 0 do
+        "first"
+      else
+        nil
+      end,
+      if fret == 17 do
+        "last"
+      else
+        nil
+      end,
+      if string == 0 do
+        "bottom"
+      else
+        nil
+      end,
+      if string == 5 do
+        "top"
+      else
+        nil
+      end,
+      if freq > 0 do
+        "playable"
+      else
+        nil
+      end
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+  end
+
+  def fret_color(string, fret, freq) do
+    colorizer =
+      Cubehelix.colorizer(
+        2.869878683553023,
+        -0.03712681223962111,
+        3,
+        0.5
+      )
+
+    {r, g, b} = colorizer.(Enum.max([Enum.min([0.9, :math.pow(1 - freq, 2)]), 0.0]))
+    "rgb(#{256 * r}, #{256 * g}, #{256 * b})"
+  end
+
+  def fret_background_color(string, fret, freq) do
+    colorizer =
+      Cubehelix.colorizer(
+        2.869878683553023,
+        -0.03712681223962111,
+        3,
+        0.5
+      )
+
+    {r, g, b} = colorizer.(Enum.max([Enum.min([0.9, :math.pow(1 - freq, 2)]), 0.1]))
+    "rgba(#{256 * r}, #{256 * g}, #{256 * b}, 0.125)"
+  end
+
+  def midi(playing) do
+    playing
+    |> Enum.zip([40, 45, 50, 55, 59, 64])
+    |> Enum.reject(fn
+      {nil, _} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {fret, open} -> fret + open end)
+  end
+
+  def handle_info(:generated, socket) do
+    IO.puts("generated")
+
+    {:noreply,
+     socket
+     |> assign(:loading, false)}
   end
 end
