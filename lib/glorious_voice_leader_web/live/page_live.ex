@@ -84,17 +84,13 @@ defmodule GVLWeb.PageLive do
   end
 
   def mount(params, socket) do
-    chords = initial_chords(Map.get(params, "chords"))
-
-    GenServer.cast(Chord.Table, {:generate, self()})
+    if connected?(socket), do: send(self(), :generate)
 
     {:ok,
      assign(
        socket,
-       title: Map.get(params, "title"),
-       token: update_token(chords),
        loading: true,
-       chords: chords
+       params: params
      )}
   end
 
@@ -456,10 +452,20 @@ defmodule GVLWeb.PageLive do
   end
 
   def handle_info(:generated, socket) do
-    IO.puts("generated")
+    chords = initial_chords(Map.get(socket.assigns.params, "chords"))
 
     {:noreply,
-     socket
-     |> assign(:loading, false)}
+     assign(
+       socket,
+       title: Map.get(socket.assigns.params, "title"),
+       token: update_token(chords),
+       loading: false,
+       chords: chords
+     )}
+  end
+
+  def handle_info(:generate, socket) do
+    GenServer.cast(Chord.Table, {:generate, self()})
+    {:noreply, socket}
   end
 end
