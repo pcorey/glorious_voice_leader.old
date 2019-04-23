@@ -2,8 +2,6 @@ defmodule GVLWeb.PageLive do
   use Phoenix.LiveView
 
   def render(assigns) do
-    IO.puts("rerendering page")
-
     ~L"""
     <div class="page" >
 
@@ -31,7 +29,7 @@ defmodule GVLWeb.PageLive do
       <%= live_render(@socket, GVLWeb.AddChordLive, session: %{
         chords: @chords,
         pid: @pid
-      }, child_id: @chords |> inspect) %>
+      }) %>
 
       <p>Glorious Voice Leader is heavily inspired by <a href="https://amzn.to/2Ince4p">the works of the amazing guitarist and educator, Ted Greene</a>. All hail, Glorious Voice Leader!</p>
       <p>Use <a href="/?chords=<%= @token %>">this link</a> to share your chord progression.</p>
@@ -112,8 +110,6 @@ defmodule GVLWeb.PageLive do
   end
 
   def handle_info({:update_chords, chords}, socket) do
-    IO.puts("handling info")
-
     {:noreply,
      socket
      |> assign(:chords, chords)

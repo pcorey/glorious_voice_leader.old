@@ -53,9 +53,9 @@ defmodule GVLWeb.ChordInputLive do
   def handle_event("validate", input, socket) do
     {index, _} = Integer.parse(input["index"])
     root_name = input["root_name"]
-    root = Map.get(@root_options, root_name)
+    root = Map.get(Chord.Root.options(), root_name)
     quality_name = input["quality_name"]
-    quality = Map.get(@quality_options, quality_name)
+    quality = Map.get(Chord.Quality.options(), quality_name)
 
     previous =
       if index == 0 do
@@ -98,11 +98,9 @@ defmodule GVLWeb.ChordInputLive do
         )
       end
 
-    {
-      :noreply,
-      socket
-      |> assign(:chords, chords)
-    }
+    send(socket.assigns.pid, {:update_chords, chords})
+
+    {:noreply, socket}
   end
 
   def handle_event("clear_fretboard", input, socket) do
@@ -147,11 +145,9 @@ defmodule GVLWeb.ChordInputLive do
         )
       end
 
-    {
-      :noreply,
-      socket
-      |> assign(:chords, chords)
-    }
+    send(socket.assigns.pid, {:update_chords, chords})
+
+    {:noreply, socket}
   end
 
   def handle_event("remove_fretboard", input, socket) do
@@ -190,11 +186,7 @@ defmodule GVLWeb.ChordInputLive do
 
     send(socket.assigns.pid, {:update_chords, chords})
 
-    {
-      :noreply,
-      socket
-      |> assign(:chords, chords)
-    }
+    {:noreply, socket}
   end
 
   def root_options do

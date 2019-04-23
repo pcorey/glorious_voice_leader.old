@@ -9,8 +9,6 @@ defmodule GVLWeb.AddChordLive do
   end
 
   def mount(params, socket) do
-    IO.puts("in mount #{inspect(params)}")
-
     {:ok,
      assign(
        socket,
@@ -20,8 +18,6 @@ defmodule GVLWeb.AddChordLive do
   end
 
   def handle_event("click", input, socket) do
-    IO.puts("chords in add #{inspect(socket.assigns.chords)}")
-
     chords =
       socket.assigns.chords ++
         [
@@ -36,15 +32,8 @@ defmodule GVLWeb.AddChordLive do
           }
         ]
 
-    IO.puts("sending")
     send(socket.assigns.pid, {:update_chords, chords})
 
-    IO.puts("returning")
-
-    {
-      :noreply,
-      socket
-      |> assign(:chords, chords)
-    }
+    {:noreply, socket}
   end
 end
