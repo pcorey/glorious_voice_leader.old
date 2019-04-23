@@ -32,7 +32,7 @@ defmodule GVLWeb.PageLive do
       <%= if index != 0 do %>
         <button phx-click="remove_fretboard" phx-value="<%= index %>">remove</button>
       <%= end %>
-      <button onclick="play(<%= index %>, <%= inspect(midi(chord.playing), char_lists: :as_lists) %>)" type="button">play</button>
+      <button onclick="play(<%= index %>, <%= inspect(midi(chord.playing), charlists: :as_lists) %>)" type="button">play</button>
       <script>
         function play(index, playing) {
           console.log(index, playing);
