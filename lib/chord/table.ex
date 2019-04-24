@@ -1,6 +1,4 @@
 defmodule Chord.Table do
-  require Ecto.Query
-
   use GenServer
 
   def start_link(opts) do
@@ -8,15 +6,21 @@ defmodule Chord.Table do
   end
 
   def init(:ok) do
-    {:ok, %{generated: false}}
+    table = :ets.new(:chords, [:protected, :bag])
+
+    {:ok, %{table: table, generated: false}}
   end
 
   def insert(data) do
     GenServer.call(__MODULE__, {:insert, data})
   end
 
-  def lookup(root) do
-    GenServer.call(__MODULE__, {:lookup, root})
+  def lookup(key) do
+    GenServer.call(__MODULE__, {:lookup, key})
+  end
+
+  def table() do
+    GenServer.call(__MODULE__, {:table})
   end
 
   def generated() do
@@ -24,13 +28,17 @@ defmodule Chord.Table do
   end
 
   def handle_call({:insert, data}, _from, state) do
-    result = Chord.Repo.insert(data)
+    result = :ets.insert(state.table, data)
     {:reply, result, state}
   end
 
-  def handle_call({:lookup, root}, _from, state) do
-    result = Chord |> Ecto.Query.where(root: ^root) |> Chord.Repo.all()
+  def handle_call({:lookup, key}, _from, state) do
+    result = :ets.lookup(state.table, key)
     {:reply, result, state}
+  end
+
+  def handle_call({:table}, _from, state) do
+    {:reply, state.table, state}
   end
 
   def handle_cast({:generate, from}, state = %{generated: true}) do
@@ -44,29 +52,12 @@ defmodule Chord.Table do
   end
 
   def handle_cast({:generate, from}, state) do
-    if Chord.Repo.aggregate(Chord, :count, :id) > 0 do
-      IO.puts("All voicings already generated.")
-      send(from, :generated)
-    else
-      chords =
-        Chords.generate()
-        |> Enum.map(
-          &%{
-            chord: &1.chord,
-            root: &1.root,
-            quality: &1.quality
-          }
-        )
-        |> Enum.chunk_every(1000)
-        |> Enum.map(fn chords ->
-          IO.puts("Inserting #{length(chords)} chords.")
-          Chord.Repo.insert_all(Chord, chords, on_conflict: :nothing)
-        end)
+    Chords.generate()
+    |> Enum.map(&:ets.insert(state.table, {&1.root, &1}))
 
-      IO.puts("All voicings generated.")
+    IO.puts("All voicings generated.")
 
-      send(from, :generated)
-    end
+    send(from, :generated)
 
     {:noreply, %{state | generated: true}}
   end
