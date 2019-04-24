@@ -111,7 +111,7 @@ defmodule Chords do
       |> Enum.map(
         &%Chord{
           chord: &1,
-          fretboard: Fretboard.from_chord(&1),
+          # fretboard: Fretboard.from_chord(&1),
           # gaps: gaps,
           quality: quality,
           root: root

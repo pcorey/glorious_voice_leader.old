@@ -114,7 +114,7 @@ defmodule Chord.Heatmap do
   defp add_possibilities(possibilities, previous) do
     possibilities =
       possibilities
-      |> Enum.map(& &1.fretboard)
+      |> Enum.map(&Fretboard.from_chord(&1.chord))
       |> Enum.with_index()
       |> Enum.map(fn {fretboard, index} ->
         for string <- fretboard do
