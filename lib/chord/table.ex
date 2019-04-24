@@ -1,4 +1,6 @@
 defmodule Chord.Table do
+  require Ecto.Query
+
   use GenServer
 
   def start_link(opts) do
@@ -6,21 +8,15 @@ defmodule Chord.Table do
   end
 
   def init(:ok) do
-    table = :ets.new(:chords, [:protected, :bag])
-
-    {:ok, %{table: table, generated: false}}
+    {:ok, %{generated: false}}
   end
 
   def insert(data) do
     GenServer.call(__MODULE__, {:insert, data})
   end
 
-  def lookup(key) do
-    GenServer.call(__MODULE__, {:lookup, key})
-  end
-
-  def table() do
-    GenServer.call(__MODULE__, {:table})
+  def lookup(root) do
+    GenServer.call(__MODULE__, {:lookup, root})
   end
 
   def generated() do
@@ -28,17 +24,13 @@ defmodule Chord.Table do
   end
 
   def handle_call({:insert, data}, _from, state) do
-    result = :ets.insert(state.table, data)
+    result = Chord.Repo.insert(data)
     {:reply, result, state}
   end
 
-  def handle_call({:lookup, key}, _from, state) do
-    result = :ets.lookup(state.table, key)
+  def handle_call({:lookup, root}, _from, state) do
+    result = Chord |> Ecto.Query.where(root: ^root) |> Chord.Repo.all()
     {:reply, result, state}
-  end
-
-  def handle_call({:table}, _from, state) do
-    {:reply, state.table, state}
   end
 
   def handle_cast({:generate, from}, state = %{generated: true}) do
@@ -53,7 +45,7 @@ defmodule Chord.Table do
 
   def handle_cast({:generate, from}, state) do
     Chords.generate()
-    |> Enum.map(&:ets.insert(state.table, {&1.root, &1}))
+    |> Enum.map(&Chord.Repo.insert/1)
 
     IO.puts("All voicings generated.")
 

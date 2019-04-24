@@ -4,7 +4,7 @@ defmodule Chord do
 
   use Ecto.Schema
 
-  embedded_schema do
+  schema "chords" do
     field(:chord, Type.Chord, default: [nil, nil, nil, nil, nil, nil])
     field(:fretboard, Type.Fretboard, default: Fretboard.new(6, 18))
     field(:gaps, Type.Gaps, default: nil)

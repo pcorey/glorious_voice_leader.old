@@ -12,6 +12,7 @@ defmodule GVL.Application do
       GVLWeb.Endpoint,
       # Starts a worker by calling: GVL.Worker.start_link(arg)
       # {GVL.Worker, arg},
+      Chord.Repo,
       Chord.Table
     ]
 
