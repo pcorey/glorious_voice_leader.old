@@ -69,7 +69,6 @@ defmodule GVLWeb.PageLive do
     <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
     <div class="marker">&nbsp;12&nbsp;&nbsp;</div>
     <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
-    <div class="marker">&nbsp;&nbsp;&nbsp;&nbsp;</div>
     <div class="marker">&nbsp;15&nbsp;&nbsp;</div>
     </div>
     </div>
