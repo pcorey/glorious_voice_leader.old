@@ -11,5 +11,7 @@ defmodule Chord.Repo.Migrations.CreateChords do
       add(:strings, :integer)
       add(:tuning, {:array, :integer})
     end
+
+    create(unique_index(:chords, [:chord]))
   end
 end

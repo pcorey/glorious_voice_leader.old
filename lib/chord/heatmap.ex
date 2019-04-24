@@ -1,7 +1,6 @@
 defmodule Chord.Heatmap do
   def generate(root, quality, playing, previous \\ [nil, nil, nil, nil, nil, nil]) do
     Chord.Table.lookup(root)
-    |> Enum.map(&elem(&1, 1))
     |> filter_on_qualities([quality])
     |> filter_on_playing(playing)
     # |> filter_on_bass(bass)

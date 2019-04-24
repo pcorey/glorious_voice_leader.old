@@ -44,12 +44,29 @@ defmodule Chord.Table do
   end
 
   def handle_cast({:generate, from}, state) do
-    Chords.generate()
-    |> Enum.map(&Chord.Repo.insert/1)
+    if Chord.Repo.aggregate(Chord, :count, :id) > 0 do
+      IO.puts("All voicings already generated.")
+      send(from, :generated)
+    else
+      chords =
+        Chords.generate()
+        |> Enum.map(
+          &%{
+            chord: &1.chord,
+            root: &1.root,
+            quality: &1.quality
+          }
+        )
+        |> Enum.chunk_every(1000)
+        |> Enum.map(fn chords ->
+          IO.puts("Inserting #{length(chords)} chords.")
+          Chord.Repo.insert_all(Chord, chords, on_conflict: :nothing)
+        end)
 
-    IO.puts("All voicings generated.")
+      IO.puts("All voicings generated.")
 
-    send(from, :generated)
+      send(from, :generated)
+    end
 
     {:noreply, %{state | generated: true}}
   end
