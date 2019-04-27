@@ -5,7 +5,7 @@ defmodule GVLWeb.PageLive do
   def render(assigns = %{loading: true}) do
     ~L"""
     <div class="loading">
-    <p>Generating chords...</p>
+    <p>Loading...</p>
     </div>
     """
   end
