@@ -465,7 +465,18 @@ defmodule GVLWeb.PageLive do
   end
 
   def handle_info(:generate, socket) do
-    GenServer.cast(Chord.Table, {:generate, self()})
-    {:noreply, socket}
+    # GenServer.cast(Chord.Table, {:generate, self()})
+    # {:noreply, socket}
+
+    chords = initial_chords(Map.get(socket.assigns.params, "chords"))
+
+    {:noreply,
+     assign(
+       socket,
+       title: Map.get(socket.assigns.params, "title"),
+       token: update_token(chords),
+       loading: false,
+       chords: chords
+     )}
   end
 end

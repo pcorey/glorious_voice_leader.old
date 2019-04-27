@@ -3,7 +3,7 @@ defmodule Chord.Application do
 
   def start(_type, _args) do
     children = [
-      Chord.Table
+      # Chord.Table
     ]
 
     opts = [

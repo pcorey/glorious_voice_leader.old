@@ -7,7 +7,7 @@ defmodule Chord.Supervisor do
 
   def init(:ok) do
     children = [
-      Chord.Table
+      # Chord.Table
     ]
 
     opts = [

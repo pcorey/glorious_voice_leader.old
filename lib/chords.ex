@@ -94,9 +94,9 @@ defmodule Chords do
 
   @frets 18
 
-  def generate() do
-    for root <- Chord.Root.values(),
-        quality <- Chord.Quality.values(),
+  def generate(roots \\ Chord.Root.values(), qualities \\ Chord.Qualities.values()) do
+    for root <- roots,
+        quality <- qualities,
         {gaps, string_sets} <- @gap_sets_and_string_sets,
         string_mask <- string_sets do
       strings =

@@ -12,8 +12,8 @@ defmodule GVL.Application do
       GVLWeb.Endpoint,
       # Starts a worker by calling: GVL.Worker.start_link(arg)
       # {GVL.Worker, arg},
-      Chord.Repo,
-      Chord.Table
+      Chord.Repo
+      # Chord.Table
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
