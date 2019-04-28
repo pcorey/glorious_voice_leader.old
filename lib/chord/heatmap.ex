@@ -89,7 +89,13 @@ defmodule Chord.Heatmap do
                fingering_b <- fingerings,
                do: Chord.Distance.Fingering.distance(fingering_a, fingering_b, [])
              )
-             |> Enum.min()
+
+             # Find the average of all possible fingering distances:
+             |> Enum.sum()
+             |> Kernel./(length(fingerings))
+
+             # Instead of finding the minimal possible fingering distance:
+             # |> Enum.min()
            end).(), &1}
     )
     |> Enum.sort()
