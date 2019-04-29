@@ -70,10 +70,10 @@ defmodule Fretboard do
     end
   end
 
-  def from_chord(chord) do
+  def from_chord(chord, tuning) do
     chord
     |> Enum.with_index()
-    |> Enum.reduce(Fretboard.new(6, 18, 0), fn
+    |> Enum.reduce(Fretboard.new(length(tuning), 18, 0), fn
       {nil, _string}, fretboard ->
         fretboard
 

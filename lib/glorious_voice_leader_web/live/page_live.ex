@@ -14,11 +14,18 @@ defmodule GVLWeb.PageLive do
     ~L"""
     <div class="page" >
     <div class="header">
+
     <%= if is_binary(@title) do %>
     <h1><%= @title %></h1>
     <%= end %>
+
     <p><strong>Glorious Voice Leader</strong> suggests guitar chord voicings for a given chord type based on the voicing that came before it. Glorious Voice Leader tries to optimize for voice leading between chords, while also balancing playability.</p>
     </div>
+
+    <%= f = form_for %Plug.Conn{}, "#", [phx_change: :change_tuning] %>
+    <%= select f, :tuning_name, Chord.Tuning.names(), value: @tuning_name %>
+    </form>
+
     <%= for {chord, index} <- Enum.with_index(@chords) do %>
     <div class="chord">
     <%= f = form_for %Plug.Conn{}, "#", [phx_change: :validate] %>
@@ -32,7 +39,7 @@ defmodule GVLWeb.PageLive do
       <%= if index != 0 do %>
         <button phx-click="remove_fretboard" phx-value="<%= index %>">remove</button>
       <%= end %>
-      <button onclick="play(<%= index %>, <%= inspect(midi(chord.playing), charlists: :as_lists) %>)" type="button">play</button>
+      <button onclick="play(<%= index %>, <%= inspect(midi(chord.playing, @tuning), charlists: :as_lists) %>)" type="button">play</button>
       <script>
         function play(index, playing) {
           console.log(index, playing);
@@ -94,11 +101,12 @@ defmodule GVLWeb.PageLive do
      )}
   end
 
-  defp initial_chords(nil) do
+  defp initial_state(nil, tuning) do
     [
       %{
-        heatmap: Chord.Heatmap.generate(0, [4, 3, 4, 1], [nil, nil, nil, nil, nil, nil]),
-        playing: [nil, nil, nil, nil, nil, nil],
+        heatmap:
+          Chord.Heatmap.generate(0, [4, 3, 4, 1], List.duplicate(nil, length(tuning)), tuning),
+        playing: List.duplicate(nil, length(tuning)),
         quality: [4, 3, 4, 1],
         quality_name: "∆7",
         root: 0,
@@ -107,7 +115,7 @@ defmodule GVLWeb.PageLive do
     ]
   end
 
-  defp initial_chords(chords) do
+  defp initial_state(chords, tuning) do
     chords =
       chords
       |> Base.decode64!()
@@ -118,7 +126,7 @@ defmodule GVLWeb.PageLive do
     |> Enum.map(fn {chord, index} ->
       previous =
         if index == 0 do
-          [nil, nil, nil, nil, nil, nil]
+          List.duplicate(nil, length(tuning))
         else
           Enum.at(chords, index - 1).playing
         end
@@ -146,7 +154,7 @@ defmodule GVLWeb.PageLive do
       )
       |> Map.put_new(
         :heatmap,
-        Chord.Heatmap.generate(chord.root, chord.quality, chord.playing, previous)
+        Chord.Heatmap.generate(chord.root, chord.quality, chord.playing, tuning, previous)
       )
     end)
   end
@@ -160,7 +168,7 @@ defmodule GVLWeb.PageLive do
 
     previous =
       if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
+        List.duplicate(nil, length(socket.assigns.tuning))
       else
         Enum.at(socket.assigns.chords, index - 1).playing
       end
@@ -170,7 +178,8 @@ defmodule GVLWeb.PageLive do
       |> List.update_at(
         index,
         &%{
-          heatmap: Chord.Heatmap.generate(root, quality, &1.playing, previous),
+          heatmap:
+            Chord.Heatmap.generate(root, quality, &1.playing, socket.assigns.tuning, previous),
           playing: &1.playing,
           quality: quality,
           quality_name: quality_name,
@@ -193,6 +202,7 @@ defmodule GVLWeb.PageLive do
                   &1.root,
                   &1.quality,
                   &1.playing,
+                  socket.assigns.tuning,
                   Enum.at(chords, index).playing
                 )
           }
@@ -205,6 +215,20 @@ defmodule GVLWeb.PageLive do
      |> assign(:token, update_token(chords))}
   end
 
+  def handle_event("change_tuning", input, socket) do
+    tuning_name = input["tuning_name"]
+    tuning = Chord.Tuning.value(tuning_name)
+
+    chords = initial_state(nil, socket.assigns.tuning)
+
+    {:noreply,
+     socket
+     |> assign(:tuning_name, tuning_name)
+     |> assign(:tuning, tuning)
+     |> assign(:chords, chords)
+     |> assign(:token, update_token(chords))}
+  end
+
   def handle_event("click_fret", input, socket) do
     {index, string, fret, value} =
       input
@@ -213,7 +237,7 @@ defmodule GVLWeb.PageLive do
 
     previous =
       if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
+        List.duplicate(nil, length(socket.assigns.tuning))
       else
         Enum.at(socket.assigns.chords, index - 1).playing
       end
@@ -226,7 +250,14 @@ defmodule GVLWeb.PageLive do
         %{
           chord
           | playing: playing,
-            heatmap: Chord.Heatmap.generate(chord.root, chord.quality, playing, previous)
+            heatmap:
+              Chord.Heatmap.generate(
+                chord.root,
+                chord.quality,
+                playing,
+                socket.assigns.tuning,
+                previous
+              )
         }
       end)
 
@@ -244,6 +275,7 @@ defmodule GVLWeb.PageLive do
                   &1.root,
                   &1.quality,
                   &1.playing,
+                  socket.assigns.tuning,
                   Enum.at(chords, index).playing
                 )
           }
@@ -262,8 +294,13 @@ defmodule GVLWeb.PageLive do
         [
           %{
             heatmap:
-              Chord.Heatmap.generate(0, [4, 3, 4, 1], List.last(socket.assigns.chords).playing),
-            playing: [nil, nil, nil, nil, nil, nil],
+              Chord.Heatmap.generate(
+                0,
+                [4, 3, 4, 1],
+                List.last(socket.assigns.chords).playing,
+                socket.assigns.tuning
+              ),
+            playing: List.duplicate(nil, length(socket.assigns.tuning)),
             quality: [4, 3, 4, 1],
             quality_name: "∆7",
             root: 0,
@@ -295,7 +332,7 @@ defmodule GVLWeb.PageLive do
 
     previous =
       if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
+        List.duplicate(nil, length(socket.assigns.tuning))
       else
         Enum.at(socket.assigns.chords, index - 1).playing
       end
@@ -303,12 +340,19 @@ defmodule GVLWeb.PageLive do
     chords =
       socket.assigns.chords
       |> List.update_at(index, fn chord ->
-        playing = [nil, nil, nil, nil, nil, nil]
+        playing = List.duplicate(nil, length(socket.assigns.tuning))
 
         %{
           chord
           | playing: playing,
-            heatmap: Chord.Heatmap.generate(chord.root, chord.quality, playing, previous)
+            heatmap:
+              Chord.Heatmap.generate(
+                chord.root,
+                chord.quality,
+                playing,
+                socket.assigns.tuning,
+                previous
+              )
         }
       end)
 
@@ -326,6 +370,7 @@ defmodule GVLWeb.PageLive do
                   &1.root,
                   &1.quality,
                   &1.playing,
+                  socket.assigns.tuning,
                   Enum.at(chords, index).playing
                 )
           }
@@ -343,7 +388,7 @@ defmodule GVLWeb.PageLive do
 
     previous =
       if index == 0 do
-        [nil, nil, nil, nil, nil, nil]
+        List.duplicate(nil, length(socket.assigns.tuning))
       else
         Enum.at(socket.assigns.chords, index - 1).playing
       end
@@ -366,6 +411,7 @@ defmodule GVLWeb.PageLive do
                   &1.root,
                   &1.quality,
                   &1.playing,
+                  socket.assigns.tuning,
                   Enum.at(chords, index - 1).playing
                 )
           }
@@ -441,9 +487,9 @@ defmodule GVLWeb.PageLive do
     "rgba(#{256 * r}, #{256 * g}, #{256 * b}, 0.125)"
   end
 
-  def midi(playing) do
+  def midi(playing, tuning) do
     playing
-    |> Enum.zip([40, 45, 50, 55, 59, 64])
+    |> Enum.zip(tuning)
     |> Enum.reject(fn
       {nil, _} -> true
       _ -> false
@@ -451,24 +497,11 @@ defmodule GVLWeb.PageLive do
     |> Enum.map(fn {fret, open} -> fret + open end)
   end
 
-  def handle_info(:generated, socket) do
-    chords = initial_chords(Map.get(socket.assigns.params, "chords"))
-
-    {:noreply,
-     assign(
-       socket,
-       title: Map.get(socket.assigns.params, "title"),
-       token: update_token(chords),
-       loading: false,
-       chords: chords
-     )}
-  end
-
   def handle_info(:generate, socket) do
     # GenServer.cast(Chord.Table, {:generate, self()})
     # {:noreply, socket}
 
-    chords = initial_chords(Map.get(socket.assigns.params, "chords"))
+    chords = initial_state(Map.get(socket.assigns.params, "chords"), [50, 55, 59, 64])
 
     {:noreply,
      assign(
@@ -476,7 +509,9 @@ defmodule GVLWeb.PageLive do
        title: Map.get(socket.assigns.params, "title"),
        token: update_token(chords),
        loading: false,
-       chords: chords
+       chords: chords,
+       tuning_name: "D G B E",
+       tuning: [50, 55, 59, 64]
      )}
   end
 end

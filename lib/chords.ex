@@ -90,18 +90,16 @@ defmodule Chords do
      ]}
   ]
 
-  @tuning [40, 45, 50, 55, 59, 64]
-
   @frets 18
 
-  def generate(roots \\ Chord.Root.values(), qualities \\ Chord.Qualities.values()) do
+  def generate(roots \\ Chord.Root.values(), qualities \\ Chord.Qualities.values(), tuning) do
     for root <- roots,
         quality <- qualities,
         {gaps, string_sets} <- @gap_sets_and_string_sets,
         string_mask <- string_sets do
       strings =
         string_mask
-        |> Enum.zip(@tuning)
+        |> Enum.zip(tuning)
         |> Enum.map(fn
           {true, open} -> open
           {false, _} -> nil

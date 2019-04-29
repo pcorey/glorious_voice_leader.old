@@ -1,13 +1,20 @@
 defmodule Chord.Heatmap do
-  def generate(root, quality, playing, previous \\ [nil, nil, nil, nil, nil, nil]) do
-    Chords.generate([root], [quality])
+  def generate(root, quality, playing, tuning, previous \\ nil) do
+    previous =
+      if previous == nil do
+        List.duplicate(nil, length(tuning))
+      else
+        previous
+      end
+
+    Chords.generate([root], [quality], tuning)
     # |> Enum.map(&elem(&1, 1))
     |> filter_on_qualities([quality])
     |> filter_on_playing(playing)
     # |> filter_on_bass(bass)
     # |> filter_on_melody(melody)
     |> sort_by_previous(previous)
-    |> add_possibilities(previous)
+    |> add_possibilities(previous, tuning)
   end
 
   defp filter_on_playing(chords, playing) do
@@ -68,10 +75,6 @@ defmodule Chord.Heatmap do
     end)
   end
 
-  defp sort_by_previous(chords, [nil, nil, nil, nil, nil, nil]) do
-    chords
-  end
-
   defp sort_by_previous(chords, previous) do
     previous_fingerings = Chord.Fingering.fingerings(previous)
 
@@ -113,19 +116,19 @@ defmodule Chord.Heatmap do
     a + b
   end
 
-  defp add_possibilities([], _) do
-    Fretboard.new(6, 18, 0)
+  defp add_possibilities([], _, tuning) do
+    Fretboard.new(length(tuning), 18, 0)
   end
 
-  defp add_possibilities(possibilities, previous) do
+  defp add_possibilities(possibilities, previous, tuning) do
     possibilities =
       possibilities
-      |> Enum.map(&Fretboard.from_chord(&1.chord))
+      |> Enum.map(&Fretboard.from_chord(&1.chord, tuning))
       |> Enum.with_index()
       |> Enum.map(fn {fretboard, index} ->
         for string <- fretboard do
           for count <- string do
-            if previous == [nil, nil, nil, nil, nil, nil] do
+            if previous == List.duplicate(nil, length(tuning)) do
               count
             else
               count / (index + 1)
